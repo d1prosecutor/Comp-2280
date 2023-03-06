@@ -9,6 +9,15 @@
  ; 			 into the array 'Result', and prints the contents of Result after merging.
  ;***************************************************************************************/
 
+;R0 is used for I/O operations
+;R1 holds the pointer to the first sorted array
+;R2 holds the pointer to the second sorted array
+;R3 holds the pointer to the resulting sorted array
+;R4 is used to count the number of items left in both arrays
+;R5 Holds the loop counter which is the sum of the sizes of the two sorted arrays
+;R6 holds the curent data of Array1
+;R7 holds the curent data of Array2
+
 .orig x3000
 
 	;Preparing to print the header banner in output

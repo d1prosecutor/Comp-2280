@@ -8,15 +8,13 @@
  ;* REMARKS: This program Implements the given circular linked list, traverses the linked 
  ;			 linked list and prints out the data(as ASCII character) of each Node in it. 
  ;***************************************************************************************/
-
-	.orig x3000
 	;R0 is used for I/O
 	;R1 holds the address of the current node being pointed to
 	;R2 holds the data contained by the current node being pointed to by R1
 	;R3 holds the copy of the adress of TOP for comparison purposes
 	;R4 holds the result of the comparison between R1(current Node address) and R3(TOP node address)
 
-
+	.orig x3000
 
 	;Preparing to print the header banner in output
 	;R0 Stores header banner

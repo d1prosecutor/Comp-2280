@@ -2,7 +2,7 @@
  ;* NAME: Chukwunaza Chukwuocha
  ;* STUDENT NUMBER: 7928676
  ;* COURSE: COMP 2280, SECTION: A02
- ;* INSTRUCTOR: Emanuel Wiens
+ ;* INSTRUCTOR: Emanuel Wens
  ;* ASSIGNMENT: Assignment 3, QUESTION: 1
  ;*
  ;* REMARKS: This program merges two sorted arrays, Data1 of size n1 and Data2 of size n2,

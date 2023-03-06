@@ -3,7 +3,7 @@
  ;* STUDENT NUMBER: 7928676
  ;* COURSE: COMP 2280, SECTION: A02
  ;* INSTRUCTOR: Emanuel Wiens
- ;* ASSIGNMENT: Assignment 3, QUESTION: 1
+ ;* ASSIGNMENT: Assignment 3, QUESTION: 2
  ;*
  ;* REMARKS: This program merges two sorted arrays, Data1 of size n1 and Data2 of size n2,
  ; 			 into the array 'Result', and prints the contents of Result after merging.

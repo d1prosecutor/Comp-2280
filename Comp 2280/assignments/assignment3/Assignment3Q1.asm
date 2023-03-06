@@ -10,6 +10,13 @@
  ;***************************************************************************************/
 
 	.orig x3000
+	;R0 is used for I/O
+	;R1 holds the address of the current node being pointed to
+	;R2 holds the data contained by the current node being pointed to by R1
+	;R3 holds the copy of the adress of TOP for comparison purposes
+	;R4 holds the result of the comparison between R1(current Node address) and R3(TOP node address)
+
+
 
 	;Preparing to print the header banner in output
 	;R0 Stores header banner
@@ -25,7 +32,7 @@
 	ADD	R3, R1, #0;
 	
 	;Make the copy of the address negative for "equals" comparison
-	;R3 HOLDS -R3
+	;R3 HOLDS -R1
 	NOT R3, R3; first flip the bits
 	ADD R3, R3, #1; 2's complement negation
 

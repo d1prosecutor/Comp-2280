@@ -113,10 +113,15 @@ Done
 
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
+MAIN
+  ADD R0,R3,#0    ;Copy that final value into R0 to prepare for pushing it onto the stack
+  JSR PUSH        ;Push the argument onto the stack
 
+  JSR PRINT       
+
+  JSR POP         ;Pop the argument from the stack
       
   HALT
-
 
 ;-----------------------------------------------------------------------------
 ;Data section
@@ -225,8 +230,6 @@ Modulo
 ;R5+2 - Parameter 1 (The Dividend)  
 Divide
   ;First save context
-  ;JSR Push          ;save  R0 since i will be using it
-
   ADD R0,R7,#0
   JSR Push          ;save R7 since I will be using it
 

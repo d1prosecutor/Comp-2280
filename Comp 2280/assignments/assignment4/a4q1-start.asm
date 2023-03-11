@@ -214,6 +214,9 @@ Rand1
 
 Modulo
 
+End_Modulo
+  RET;
+
 
 ;---------------------------------------------------  
 ;Subroutine Divide - Divides a non-negative number by a positive number

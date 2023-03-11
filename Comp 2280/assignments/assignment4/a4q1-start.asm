@@ -121,7 +121,7 @@ MAIN
 
   JSR POP         ;Pop the argument from the stack
       
-  HALT
+HALT
 
 ;-----------------------------------------------------------------------------
 ;Data section

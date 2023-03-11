@@ -214,6 +214,7 @@ Rand1
 
 Modulo
 
+
 ;---------------------------------------------------  
 ;Subroutine Divide - Divides a non-negative number by a positive number
 
@@ -275,26 +276,26 @@ Do_Divide
     LDR R3,R5,#-6    ;Get the final result of the division and load into R3 to prepare for returning it
     STR R3,R5,#0     ;Store the result into the return value address of the caller
 
-  End_Divide
-    ;Restore Saved context
-    JSR Pop           ;Pop the local variable from the stack
+End_Divide
+  ;Restore Saved context
+  JSR Pop           ;Pop the local variable from the stack
     
-    JSR Pop           
-    ADD R3,R0,#0      ;restore R3
+  JSR Pop           
+  ADD R3,R0,#0      ;restore R3
 
-    JSR Pop           
-    ADD R2,R0,#0      ;restore R2
+  JSR Pop           
+  ADD R2,R0,#0      ;restore R2
 
-    JSR Pop           
-    ADD R1,R0,#0      ;restore R1
+  JSR Pop           
+  ADD R1,R0,#0      ;restore R1
 
-    JSR Pop           
-    ADD R5,R0,#0      ;restore R5
+  JSR Pop           
+  ADD R5,R0,#0      ;restore R5
 
-    JSR Pop           
-    ADD R7,R0,#0      ;restore R7
+  JSR Pop           
+  ADD R7,R0,#0      ;restore R7
 
-    RET;
+  RET;
 
 
 ;Constants required by print  

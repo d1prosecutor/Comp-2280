@@ -114,12 +114,23 @@ Done
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
 MAIN
-  ADD R0,R3,#0    ;Copy that final value into R0 to prepare for pushing it onto the stack
+  AND R0,R0,#0
+  ADD R0,R0,#5   
   JSR PUSH        ;Push the argument onto the stack
 
-  JSR PRINT       
+  AND R0,R0,#0
+  ADD R0,R0,#3   
+  JSR PUSH        ;Push the argument onto the stack
+
+  JSR PUSH
+
+  ;push dividend, divisro, then return space    
+  JSR Divide  
 
   JSR POP         ;Pop the argument from the stack
+
+
+  BR MAIN
 END_MAIN
       
 HALT
@@ -224,12 +235,13 @@ End_Modulo
 ;Data Dictionary:
 ;R1 - will hold the dividend
 ;R2 - will hold the divisor
-;R3 - scratch register, will hold the local variable containing the quotient
+;R3 - will hold the local variable containing the quotient
+;R4 - scratch register
 ;R7 - return address to caller
 
 
 ;Stack Frame:
-;R5-6 - Local variable for the quotient
+;R5-7 - Local variable for the quotient
 ;R5+0 - return value (will hold the value of paramter 1 / parameter 2)
 ;R5+1 - Parameter 2 (The divisor)
 ;R5+2 - Parameter 1 (The Dividend)  
@@ -252,12 +264,15 @@ Divide
   ADD R0,R3,#0
   JSR Push          ;save R3 since I will be using it
 
+  ADD R0,R4,#0
+  JSR Push          ;save R4 since I will be using it
+
   AND R0,R0,#0      ;set R0 to 0
   JSR Push          ;push #0 onto stack to initialize the local variable for the quotient
 
 Do_Divide
-  LDR R1,R5,#1      ;Load the dividend into R1
-  LDR R2,R5,#2      ;Load the divisor into R2
+  LDR R1,R5,#2      ;Load the dividend into R1
+  LDR R2,R5,#1      ;Load the divisor into R2
 
   ;Get the negative value of the divisor for division algorithm
   NOT R2,R2
@@ -266,23 +281,29 @@ Do_Divide
   ADD R3,R1,R2      ;Check if the divisor <= the dividend
   BRN END_WHILE     ;If the dividend is < the divisor then the result should just be zero
 
-  LDR R3,R5,#-6      ;Initialize the quotient to zero
+  LDR R3,R5,#-7     ;Initialize the quotient to zero
 
   WHILE
-    ADD R3,R3,#1     ;Increment the quotient
-    STR R3,R5,#-6    ;Update the local variable on the stack to hold the new quotient
+    ADD R3,R3,#1    ;Increment the quotient
+    STR R3,R5,#-7   ;Update the local variable on the stack to hold the new quotient
 
-    ADD R1,R1,R2     ;Perform another step of division
-  BRZP WHILE         ;Kepp dividing while the dividend is greater or equal to the divisor
+    ADD R1,R1,R2    ;Perform another step of division
+
+    ;Keep dividing while the new dividend(after each step) >= the divisor
+    ADD R4,R1,R2    ;Compare the new dividend with the divisor, R2 already holds (-divisor)
+
+	BRZP WHILE        ;Keep dividing while each (new) dividend is greater or equal to the divisor
 
   END_WHILE
-    LDR R3,R5,#-6    ;Get the final result of the division and load into R3 to prepare for returning it
-    STR R3,R5,#0     ;Store the result into the return value address of the caller
 
 End_Divide
   ;Restore Saved context
   JSR Pop           ;Pop the local variable from the stack
+  STR R0,R5,#0		  ;Store the result into the return value address of the caller
     
+  JSR Pop           
+  ADD R4,R0,#0      ;restore R4
+
   JSR Pop           
   ADD R3,R0,#0      ;restore R3
 

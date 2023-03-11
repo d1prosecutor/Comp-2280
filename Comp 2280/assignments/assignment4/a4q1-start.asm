@@ -113,6 +113,7 @@ Done
 
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
+
       
   HALT
 
@@ -141,14 +142,37 @@ STACKBASE .fill   xFD00 ;start of stack
 ;------------------------------------------------------
 ;Subroutine Push
 ;pushes the contents of R0 onto the stack
+
+;Data Dictionary:
 ;R0- contains data to be pushed.
 Push
+  ADD R6,R6,#-1; make space on the stack for pushing the data
+  STR R0,R6,#0; push the contents of R0 onto the stack
+End_Push
+  RET;
 
 ;------------------------------------------------------
 ;Subroutine Pop
 ;pops the contents of Top of Stack into R0
-;R0 - will contain value of data popped.
+
+;Data Dictionary:
+;R0 - will be used for underflow checking, will contain value of data popped at end of routine.
 Pop 
+  ;Check if the stack pointer is at the base of the stack to avoid underflow
+  ;first store the negative value of the stack base in R0 for comparison
+  LD  R0,STACKBASE; 
+  NOT R0,R0; 
+  ADD R0,R0,#1; R0 holds (-stackBase) now
+
+  ;Now compare the current position of the stack pointer with the stack base
+  ADD R0,R0,R6
+  BRZ End_Pop; Don't pop the stack if the stack pointer is at (or below) the base of the stack 
+  
+  Do_Pop
+  LDR R0,R6,#0; store the contents of the top of the stack into R0 before popping
+  ADD R6,R6,#1;
+End_Pop
+  RET;
 
 ;----------------------------------------------
 ;Subroutine Rand16 - generates a 16-bit positive random integer
@@ -187,11 +211,87 @@ Modulo
 ;---------------------------------------------------  
 ;Subroutine Divide - Divides a non-negative number by a positive number
 
+;Data Dictionary:
+;R1 - will hold the dividend
+;R2 - will hold the divisor
+;R3 - scratch register, will hold the local variable containing the quotient
+;R7 - return address to caller
+
+
 ;Stack Frame:
+;R5-6 - Local variable for the quotient
 ;R5+0 - return value (will hold the value of paramter 1 / parameter 2)
 ;R5+1 - Parameter 2 (The divisor)
 ;R5+2 - Parameter 1 (The Dividend)  
 Divide
+  ;First save context
+  ;JSR Push          ;save  R0 since i will be using it
+
+  ADD R0,R7,#0
+  JSR Push          ;save R7 since I will be using it
+
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
+  JSR Push
+
+  ADD R5,R6,#2      ;make R5 point to return value 
+
+  ADD R0,R1,#0
+  JSR Push          ;save R1 since I will be using it
+
+  ADD R0,R2,#0
+  JSR Push          ;save R2 since I will be using it
+
+  ADD R0,R3,#0
+  JSR Push          ;save R3 since I will be using it
+
+  AND R0,R0,#0      ;set R0 to 0
+  JSR Push          ;push #0 onto stack to initialize the local variable for the quotient
+
+Do_Divide
+  LDR R1,R5,#1      ;Load the dividend into R1
+  LDR R2,R5,#2      ;Load the divisor into R2
+
+  ;Get the negative value of the divisor for division algorithm
+  NOT R2,R2
+  ADD R2,R2,#1      ;R2 holds (-Divisor)
+
+  ADD R3,R1,R2      ;Check if the divisor <= the dividend
+  BRN END_WHILE     ;If the dividend is < the divisor then the result should just be zero
+
+  LDR R3,R5,#-6      ;Initialize the quotient to zero
+
+  WHILE
+    ADD R3,R3,#1     ;Increment the quotient
+    STR R3,R5,#-6    ;Update the local variable on the stack to hold the new quotient
+
+    ADD R1,R1,R2     ;Perform another step of division
+  BRZP WHILE         ;Kepp dividing while the dividend is greater or equal to the divisor
+
+  END_WHILE
+    LDR R3,R5,#-6    ;Get the final result of the division and load into R3 to prepare for returning it
+    STR R3,R5,#0     ;Store the result into the return value address of the caller
+
+  End_Divide
+    ;Restore Saved context
+    JSR Pop           ;Pop the local variable from the stack
+    
+    JSR Pop           
+    ADD R3,R0,#0      ;restore R3
+
+    JSR Pop           
+    ADD R2,R0,#0      ;restore R2
+
+    JSR Pop           
+    ADD R1,R0,#0      ;restore R1
+
+    JSR Pop           
+    ADD R5,R0,#0      ;restore R5
+
+    JSR Pop           
+    ADD R7,R0,#0      ;restore R7
+
+    RET;
+
 
 ;Constants required by print  
 ASCII_MINUS_SIGN  .fill #45   ;ASCII CODE for '-'
@@ -225,7 +325,7 @@ Print
   ADD R0,R7,#0
   JSR Push          ;save R7 (since we will be using it)
   
-  ADD R0,R5,#0     ;save R5, important since this routine may be called from another routine.
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
   JSR Push
   
   ADD R5,R6,#2      ;make R5 point to return value 

@@ -166,7 +166,7 @@ Push
   ADD R6,R6,#-1; make space on the stack for pushing the data
   STR R0,R6,#0; push the contents of R0 onto the stack
 End_Push
-  RET;
+RET;
 
 ;------------------------------------------------------
 ;Subroutine Pop
@@ -189,7 +189,7 @@ Pop
   LDR R0,R6,#0; store the contents of the top of the stack into R0 before popping
   ADD R6,R6,#1;
 End_Pop
-  RET;
+RET;
 
 ;----------------------------------------------
 ;Subroutine Rand16 - generates a 16-bit positive random integer
@@ -226,7 +226,7 @@ Rand1
 Modulo
 
 End_Modulo
-  RET;
+RET;
 
 
 ;---------------------------------------------------  
@@ -318,8 +318,7 @@ End_Divide
 
   JSR Pop           
   ADD R7,R0,#0      ;restore R7
-
-  RET;
+RET;
 
 
 ;Constants required by print  

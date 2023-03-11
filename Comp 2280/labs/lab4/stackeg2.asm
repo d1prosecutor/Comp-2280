@@ -99,7 +99,7 @@ Done
   LDR R1,R6,#0      ;restore R1
   ADD R6,R6,#1
 
-  LDR R0,R6,#0      ;restor R0
+  LDR R0,R6,#0      ;restore R0
   ADD R6,R6,#1
 
   LDR R5,R6,#0      ;restore R5

@@ -120,6 +120,7 @@ MAIN
   JSR PRINT       
 
   JSR POP         ;Pop the argument from the stack
+END_MAIN
       
 HALT
 

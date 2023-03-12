@@ -115,17 +115,17 @@ Done
 ;Main part of code for generating random numbers
 MAIN
   AND R0,R0,#0
-  ADD R0,R0,#5   
+  ADD R0,R0,#14   
   JSR PUSH        ;Push the argument onto the stack
 
   AND R0,R0,#0
-  ADD R0,R0,#3   
+  ADD R0,R0,#15  
   JSR PUSH        ;Push the argument onto the stack
 
   JSR PUSH
 
   ;push dividend, divisro, then return space    
-  JSR Divide  
+  JSR Modulo  
 
   JSR POP         ;Pop the argument from the stack
 
@@ -218,14 +218,170 @@ Rand1
 ;
 ;implemented as A % B = A - (A/B) * B
 
+;Data Dictionary:
+;R0 - used for push and pop routines, holds the result of A mod B
+;R1 - will hold 'A'
+;R2 - will hold 'B'
+;R7 - return address to caller
+
 ;Stack Frame:
 ;R5+0 - return value (will hold the value of A % B) 
 ;R5+1 - Parameter 2 (B)
 ;R5+2 - Parameter 1 (A)
 
 Modulo
+  ;First save context
+  ADD R0,R7,#0
+  JSR Push          ;save R7 since I will be using it
+
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
+  JSR Push
+
+  ADD R5,R6,#2      ;make R5 point to return value 
+
+  ADD R0,R1,#0
+  JSR Push          ;save R1 since I will be using it
+
+  ADD R0,R2,#0
+  JSR Push          ;save R2 since I will be using it
+
+Do_Modulo
+  LDR R1,R5,#2      ;Load the first parameter(A) into R1
+  LDR R2,R5,#1      ;Load the second parameter(B) into R2
+
+  ;First calculate (A/B)
+  ADD R0,R1,#0      ;Get the first parameter (dividend) to push as an argument onto the stack
+  JSR PUSH          ;Push the argument onto the stack
+
+  ADD R0,R2,#0      ;Get the second parameter (divisor) to push as an argument onto the stack
+  JSR PUSH          ;Push the argument onto the stack
+
+  JSR PUSH          ;push space for the return value
+
+  JSR Divide        ;Calcualate (A/B)
+
+  ;There's no need to pop the result (A/B) from the stack just yet since I will be using it immediately 
+  ;Now calculate (A/B) * B by first pushing B from R2 onto the stack 
+
+  ADD R0,R2,#0      
+  JSR PUSH          ;Push B onto the stack
+
+  JSR PUSH          ;push space for the return value
+
+  JSR Multiply      ;Calcualate (A/B) * B
+
+  JSR POP           ;Pop the result from the stack
+
+  ADD R2,R0,#0      ;Store the result of (A/B) * B in R2 in preparation to calculate A mod B = A - (A/B) * B
+
+  ;Pop all the rest of the arguments pushed onto the stack by this routine
+
+  JSR POP 
+  JSR POP 
+  JSR POP
+  JSR POP
+
+  ;Now calculate A mod B = A - (A/B) * B
+  ;R1 holds A
+  ;R2 holds the result of (A/B) * B
+  ;R0 holds the result of A - (A/B) * B which is A mod B
+  NOT R2,R2
+  ADD R2,R2,#1      ;R2 has now been flipped to its negative value (-(A/B) * B)
+
+  ADD R0,R1,R2      ;R0 holds the output (A mod B)
+
+  STR R0,R5,#0      ;Store the result of A mod B in the return value address of the caller
 
 End_Modulo
+  ;Restore Saved context
+  JSR Pop           
+  ADD R2,R0,#0      ;restore R2
+
+  JSR Pop           
+  ADD R1,R0,#0      ;restore R1
+
+  JSR Pop           
+  ADD R5,R0,#0      ;restore R5
+
+  JSR Pop           
+  ADD R7,R0,#0      ;restore R7
+RET;
+
+;---------------------------------------------------  
+;Subroutine Multiply - Multiplies two numbers together
+
+;Data Dictionary:
+;R1 - will hold the first factor
+;R2 - will hold the second factor
+;R3 - will hold the local variable containing the Product
+;R4 - scratch register
+;R7 - return address to caller
+
+
+;Stack Frame:
+;R5-7 - Local variable for the product
+;R5+0 - return value (will hold the value of paramter 1 * parameter 2)
+;R5+1 - Parameter 1 (first factor)
+;R5+2 - Parameter 2 (second factor)  
+Multiply
+  ;First save context
+  ADD R0,R7,#0
+  JSR Push          ;save R7 since I will be using it
+
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
+  JSR Push
+
+  ADD R5,R6,#2      ;make R5 point to return value 
+
+  ADD R0,R1,#0
+  JSR Push          ;save R1 since I will be using it
+
+  ADD R0,R2,#0
+  JSR Push          ;save R2 since I will be using it
+
+  ADD R0,R3,#0
+  JSR Push          ;save R3 since I will be using it
+
+  AND R0,R0,#0      ;set R0 to 0
+  JSR Push          ;push #0 onto stack to initialize the local variable for the product
+
+Do_Multiply
+  LDR R1,R5,#1      ;Load the first factor into R1
+  LDR R2,R5,#2      ;Load the second factor into R2
+
+  BRZ END_WHILE_MULTIPLY     ;If the second factor is 0, just return 0
+
+  LDR R3,R5,#-6     ;Initialize the product to 0
+
+  WHILE_MULTIPLY
+    ADD R3,R3,R1    ;increment the product by a factor of the the second parameter each time
+
+    STR R3,R5,#-6   ;Update the local variable on the stack to hold the new product
+
+    ADD R2,R2,#-1   ;Decrement the loop counter each time till it reaches zero
+    BRP WHILE_MULTIPLY     
+
+  END_WHILE_MULTIPLY
+
+End_Multiply
+  ;Restore Saved context
+  JSR Pop           ;Pop the local variable from the stack
+  STR R0,R5,#0		  ;Store the result into the return value address of the caller
+
+  JSR Pop           
+  ADD R3,R0,#0      ;restore R3
+
+  JSR Pop           
+  ADD R2,R0,#0      ;restore R2
+
+  JSR Pop           
+  ADD R1,R0,#0      ;restore R1
+
+  JSR Pop           
+  ADD R5,R0,#0      ;restore R5
+
+  JSR Pop           
+  ADD R7,R0,#0      ;restore R7
 RET;
 
 
@@ -278,12 +434,12 @@ Do_Divide
   NOT R2,R2
   ADD R2,R2,#1      ;R2 holds (-Divisor)
 
-  ADD R3,R1,R2      ;Check if the divisor <= the dividend
-  BRN END_WHILE     ;If the dividend is < the divisor then the result should just be zero
+  ADD R3,R1,R2             ;Check if the divisor <= the dividend
+  BRN END_WHILE_DIVIDE     ;If the dividend is < the divisor then the result should just be zero
 
   LDR R3,R5,#-7     ;Initialize the quotient to zero
 
-  WHILE
+  WHILE_DIVIDE
     ADD R3,R3,#1    ;Increment the quotient
     STR R3,R5,#-7   ;Update the local variable on the stack to hold the new quotient
 
@@ -292,9 +448,9 @@ Do_Divide
     ;Keep dividing while the new dividend(after each step) >= the divisor
     ADD R4,R1,R2    ;Compare the new dividend with the divisor, R2 already holds (-divisor)
 
-	BRZP WHILE        ;Keep dividing while each (new) dividend is greater or equal to the divisor
+	  BRZP WHILE_DIVIDE      ;Keep dividing while each (new) dividend is greater or equal to the divisor
 
-  END_WHILE
+  END_WHILE_DIVIDE
 
 End_Divide
   ;Restore Saved context

@@ -566,19 +566,19 @@ Do_Multiply
   LDR R1,R5,#1      ;Load the first factor into R1
   LDR R2,R5,#2      ;Load the second factor into R2
 
-  BRZ END_REPEATED_ADD     ;If the second factor is 0, just return 0
+  BRZ End_Repeated_Add     ;If the second factor is 0, just return 0
 
   LDR R3,R5,#-6     ;Initialize the product to 0
 
-  REPEATED_ADD
+  Repeated_Add
     ADD R3,R3,R1    ;increment the product by a factor of the the second parameter each time
 
     STR R3,R5,#-6   ;Update the local variable on the stack to hold the new product
 
     ADD R2,R2,#-1   ;Decrement the loop counter each time till it reaches zero
-    BRP REPEATED_ADD 
+    BRP Repeated_Add
 
-  END_REPEATED_ADD
+  End_Repeated_Add
 
 End_Multiply
   ;Restore Saved context
@@ -652,11 +652,11 @@ Do_Divide
   ADD R2,R2,#1      ;R2 holds (-Divisor)
 
   ADD R3,R1,R2             ;Check if the divisor <= the dividend
-  BRN END_WHILE_DIVIDE     ;If the dividend is < the divisor then the result should just be zero
+  BRN End_Repeated_Subtract     ;If the dividend is < the divisor then the result should just be zero
 
   LDR R3,R5,#-7     ;Initialize the quotient to zero
 
-  WHILE_DIVIDE
+  Repeated_Subtract
     ADD R3,R3,#1    ;Increment the quotient
     STR R3,R5,#-7   ;Update the local variable on the stack to hold the new quotient
 
@@ -665,9 +665,9 @@ Do_Divide
     ;Keep dividing while the new dividend(after each step) >= the divisor
     ADD R4,R1,R2    ;Compare the new dividend with the divisor, R2 already holds (-divisor)
 
-	  BRZP WHILE_DIVIDE      ;Keep dividing while each (new) dividend is greater or equal to the divisor
+	  BRZP Repeated_Subtract      ;Keep dividing while each (new) dividend is greater or equal to the divisor
 
-  END_WHILE_DIVIDE
+  End_Repeated_Subtract
 
 End_Divide
   ;Restore Saved context

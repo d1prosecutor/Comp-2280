@@ -161,7 +161,7 @@ STACKBASE .fill   xFD00 ;start of stack
 ;pushes the contents of R0 onto the stack
 
 ;Data Dictionary:
-;R0- contains data to be pushed.
+;R0 - contains data to be pushed.
 Push
   ADD R6,R6,#-1; make space on the stack for pushing the data
   STR R0,R6,#0; push the contents of R0 onto the stack
@@ -209,9 +209,226 @@ StrSeed .stringz "asdfghjkl;' `1234567890-= ~!@#$%^&*()_+ qwertyuiop[]\ QWERTYUI
 ;Subroutine Rand1 - generates a random bit according to the rules specified in the assignment
 
 ;Stack Frame:
+;R5-6 - Local variable for the character pointer
+;R5-7 - Local variable for the shift counter
+;R5-8 - Local variable for the least significant bit of the first character
+;R5-9 - Local variable for the least significant bit of the second character
 ;R5+0 - return value (the random bit in bit position 0) 
 
+;Data Dictionary:
+;R0 - used for push and pop routines, scratch register
+;R1 - holds the pointer to the string of characters being read
+;R2 - shift counter, n, for the number of times to right shift a bit (reading the nth least significant bit from a character)
+;R3 - will hold a bit mask which will be used to read the least significant bit each time
+;R4 - scratch register, 
 Rand1
+  ;First save context
+  ADD R0,R7,#0
+  JSR Push          ;save R7 since I will be using it
+
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
+  JSR Push
+
+  ADD R5,R6,#2      ;make R5 point to return value 
+
+  ADD R0,R1,#0
+  JSR Push          ;save R1 since I will be using it as a pointer to the string of characters
+
+  ADD R0,R2,#0
+  JSR Push          ;save R2 since I will be using it to store the shift counter
+
+  ADD R0,R3,#0
+  JSR Push          ;save R3 since I will be using it as a bit mask
+
+  ADD R0,R4,#0
+  JSR Push          ;save R4 since I will be using it as a scratch register
+
+  JSR Push          ;push space for the character pointer variable
+
+  ;AND R0,R0,#0
+  JSR Push          ;push space for the shift counter variable, ; {might remove (initialize to zero)}
+
+  JSR Push          ;push space for storing the bit result of shifting the first character
+
+  JSR Push          ;push space for storing the bit result of shifting the second character
+
+Init_Rand1     
+  ;Initialize the pointer to the first character in the string
+  LEA R1,StrSeed
+  STR R1,R5,#-6
+
+  ;Initialize the shift counter, n, to 0
+  AND R2,R2,#0
+  STR R2,R5,#-7
+
+  ;Initialize the bit mask to 1
+  AND R3,R3,#0
+  ADD R3,R3,#1 
+
+;Read off n bits from each character, incrementing n each time and cycling back with modulo 8
+Do_Rand1
+  ;Increment the shift counter, n, for the next character to be read
+  LDR R2,R5,#-7
+  ADD R2,R2,#1      ;Increment n
+  
+  ;Cycle the shift counter by mod 8
+  ADD R0,R2,#0
+  JSR PUSH          ;Push n as the argument (A) onto the stack
+
+  AND R0,R0,#0
+  ADD R0,R0,#8
+  JSR PUSH          ;Push 8 as the argument (B) onto the stack
+
+  JSR PUSH          ;Push space for the return value
+
+  JSR Modulo        ;Calculate A mod B
+
+  JSR POP
+  ADD R2,R0,#0      ;Store the return value in R2
+
+  JSR POP
+  JSR POP           ;Pop off the arguments
+
+  STR R2,R5,#-7     ;Update the value of the local variable for the shift counter
+
+  LDR R4,R1,#0      ;Get the next character
+ 
+  ;!!! This is where i should probaby check if the next character is a null terminator in order to cycle back to the beginning
+
+  READ_FIRST_CHAR
+    ;Shift the character n times with division by 2
+    ADD R0,R4,#0
+    JSR PUSH        ;Push the character as the dividend onto the stack
+
+    AND R0,R0,#0
+    ADD R0,R0,#2
+    JSR PUSH        ;Push 2 as the divisor onto the stack
+
+    JSR PUSH        ;Push space for the return value
+
+    JSR Divide  
+
+    JSR POP         ;Pop the result from the stack
+    ADD R4,R0,#0    ;Save that result in R4
+
+    AND R0,R0,R3    ;Get the least significant bit of the result
+    STR R0,R5,#-8   ;Save the least significant bit of the result on the stack
+
+    JSR POP
+    JSR POP         ;Pop the arguments
+
+    ADD R2,R2,#-1   ;Decrement the shift counter
+  BRp READ_FIRST_CHAR
+
+  ;Increment the shift counter, n, for the next character to be read
+  LDR R2,R5,#-7
+  ADD R2,R2,#1      ;Increment n
+  
+  ;Cycle the shift counter by mod 8
+  ADD R0,R2,#0
+  JSR PUSH          ;Push n as the argument (A) onto the stack
+
+  AND R0,R0,#0
+  ADD R0,R0,#8
+  JSR PUSH          ;Push 8 as the argument (B) onto the stack
+
+  JSR PUSH          ;Push space for the return value
+
+  JSR Modulo        ;Calculate A mod B
+
+  JSR POP
+  ADD R2,R0,#0      ;Store the return value in R2
+
+  JSR POP
+  JSR POP           ;Pop off the arguments
+
+  STR R2,R5,#-7     ;Update the value of the local variable for the shift counter
+
+  LDR R4,R1,#0      ;Get the next character
+ 
+  ;!!! This is where i should probaby check if the next character is a null terminator in order to cycle back to the beginning
+
+  READ_SECOND_CHAR
+    ;Shift the character n times with division by 2
+    ADD R0,R4,#0
+    JSR PUSH        ;Push the character as the dividend onto the stack
+
+    AND R0,R0,#0
+    ADD R0,R0,#2
+    JSR PUSH        ;Push 2 as the divisor onto the stack
+
+    JSR PUSH        ;Push space for the return value
+
+    JSR Divide  
+
+    JSR POP         ;Pop the result from the stack
+    ADD R4,R0,#0    ;Save that result in R4
+
+    
+    AND R0,R0,R3    ;Get the least significant bit of the result
+    STR R0,R5,#-9   ;Save the least significant bit of the result on the stack
+
+    JSR POP
+    JSR POP         ;Pop the arguments
+
+    ADD R2,R2,#-1   ;Decrement the shift counter
+  BRp READ_SECOND_CHAR
+
+  ;Check if a random bit can be formed from the two read characters
+  LDR R0,R5,#-8     ;Load the least significant bit of the first character
+  LDR R4,R5,#-9     ;Load the least significant bit of the second character
+
+  ;subtract the bits
+  ;First negate the second bit
+  NOT R4,R4
+  ADD R4,R4,#1      ;R4 now holds the negative value of the second character's least significant bit
+
+  ADD R4,R0,R4      ;Perfrom the subtraction
+
+  ;BRz         !!!!!!!!!      ;Read the next two characters if the two bits are the same
+
+  BRp RETURN_ONE
+    ;If the result is negative, then the two bits are 01 respectively, so return 0
+    AND R0,R0,#0
+
+    STR R0,R5,#0    ;Store zero in the return address of the caller
+    BR End_Rand1
+
+  RETURN_ONE 
+    ;If the result is positive, then the two bits are 10 respectively, so return 1
+    AND R0,R0,#0
+    ADD R0,R0,#1
+
+    STR R0,R5,#0    ;Store one in the return address of the caller
+End_Rand1
+  ;Restore Saved context
+  JSR POP
+  JSR POP
+  JSR POP
+  JSR Pop           ;Pop the local variables from the stack
+
+  JSR Pop           
+  ADD R4,R0,#0      ;restore R4
+
+  JSR Pop           
+  ADD R3,R0,#0      ;restore R3
+
+  JSR Pop           
+  ADD R2,R0,#0      ;restore R2
+
+  JSR Pop           
+  ADD R1,R0,#0      ;restore R1
+
+  JSR Pop           
+  ADD R5,R0,#0      ;restore R5
+
+  JSR Pop           
+  ADD R7,R0,#0      ;restore R7
+RET;
+  
+
+
+
 
 ;----------------------------------------------
 ;Subroutine Modulo - finds the remainder when dividing a non-negative number by a positive number
@@ -319,7 +536,7 @@ RET;
 
 
 ;Stack Frame:
-;R5-7 - Local variable for the product
+;R5-6 - Local variable for the product
 ;R5+0 - return value (will hold the value of paramter 1 * parameter 2)
 ;R5+1 - Parameter 1 (first factor)
 ;R5+2 - Parameter 2 (second factor)  
@@ -342,18 +559,18 @@ Multiply
   ADD R0,R3,#0
   JSR Push          ;save R3 since I will be using it
 
-  AND R0,R0,#0      ;set R0 to 0
+  AND R0,R0,#0      
   JSR Push          ;push #0 onto stack to initialize the local variable for the product
 
 Do_Multiply
   LDR R1,R5,#1      ;Load the first factor into R1
   LDR R2,R5,#2      ;Load the second factor into R2
 
-  BRZ END_WHILE_MULTIPLY     ;If the second factor is 0, just return 0
+  BRZ END_REPEATED_ADD     ;If the second factor is 0, just return 0
 
   LDR R3,R5,#-6     ;Initialize the product to 0
 
-  WHILE_MULTIPLY
+  REPEATED_ADD
     ADD R3,R3,R1    ;increment the product by a factor of the the second parameter each time
 
     STR R3,R5,#-6   ;Update the local variable on the stack to hold the new product
@@ -361,7 +578,7 @@ Do_Multiply
     ADD R2,R2,#-1   ;Decrement the loop counter each time till it reaches zero
     BRP WHILE_MULTIPLY     
 
-  END_WHILE_MULTIPLY
+  END_REPEATED_ADD
 
 End_Multiply
   ;Restore Saved context
@@ -423,7 +640,7 @@ Divide
   ADD R0,R4,#0
   JSR Push          ;save R4 since I will be using it
 
-  AND R0,R0,#0      ;set R0 to 0
+  AND R0,R0,#0      
   JSR Push          ;push #0 onto stack to initialize the local variable for the quotient
 
 Do_Divide

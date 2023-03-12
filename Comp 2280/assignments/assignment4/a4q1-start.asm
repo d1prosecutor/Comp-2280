@@ -114,23 +114,7 @@ Done
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
 MAIN
-  AND R0,R0,#0
-  ADD R0,R0,#14   
-  JSR PUSH        ;Push the argument onto the stack
 
-  AND R0,R0,#0
-  ADD R0,R0,#15  
-  JSR PUSH        ;Push the argument onto the stack
-
-  JSR PUSH
-
-  ;push dividend, divisro, then return space    
-  JSR Modulo  
-
-  JSR POP         ;Pop the argument from the stack
-
-
-  BR MAIN
 END_MAIN
       
 HALT
@@ -205,11 +189,12 @@ Rand16
 ;static variables for Rand1
 StrSeed .stringz "asdfghjkl;' `1234567890-= ~!@#$%^&*()_+ qwertyuiop[]\ QWERTYUIOP{}| zxcvbnm,./ ASDFGHJKL: ZXCVBNM<>?"
 
+charPointer .fill StrSeed
+
 ;----------------------------------------------
 ;Subroutine Rand1 - generates a random bit according to the rules specified in the assignment
 
 ;Stack Frame:
-;R5-6 - Local variable for the character pointer
 ;R5-7 - Local variable for the shift counter
 ;R5-8 - Local variable for the least significant bit of the first character
 ;R5-9 - Local variable for the least significant bit of the second character
@@ -243,9 +228,6 @@ Rand1
   ADD R0,R4,#0
   JSR Push          ;save R4 since I will be using it as a scratch register
 
-  JSR Push          ;push space for the character pointer variable
-
-  ;AND R0,R0,#0
   JSR Push          ;push space for the shift counter variable, ; {might remove (initialize to zero)}
 
   JSR Push          ;push space for storing the bit result of shifting the first character
@@ -254,7 +236,7 @@ Rand1
 
 Init_Rand1     
   ;Initialize the pointer to the first character in the string
-  LEA R1,StrSeed
+  LD R1,charPointer
   STR R1,R5,#-6
 
   ;Initialize the shift counter, n, to 0
@@ -265,18 +247,18 @@ Init_Rand1
   AND R3,R3,#0
   ADD R3,R3,#1 
 
-;Read off n bits from each character, incrementing n each time and cycling back with modulo 8
+;Read off n bits from each character, incrementing n each time and cycling back with modulo 9
 Do_Rand1
   ;Increment the shift counter, n, for the next character to be read
   LDR R2,R5,#-7
   ADD R2,R2,#1      ;Increment n
   
-  ;Cycle the shift counter by mod 8
+  ;Cycle the shift counter by mod 9
   ADD R0,R2,#0
   JSR PUSH          ;Push n as the argument (A) onto the stack
 
   AND R0,R0,#0
-  ADD R0,R0,#8
+  ADD R0,R0,#9
   JSR PUSH          ;Push 8 as the argument (B) onto the stack
 
   JSR PUSH          ;Push space for the return value
@@ -286,50 +268,66 @@ Do_Rand1
   JSR POP
   ADD R2,R0,#0      ;Store the return value in R2
 
+  BRp Dont_Reset_Counter1
+    ;If the result of the modulo is 0, then reset the counter to 1 (to read the 1st least significant bit)
+    ADD R2,R2,#1   
+
+  Dont_Reset_Counter1
   JSR POP
   JSR POP           ;Pop off the arguments
 
   STR R2,R5,#-7     ;Update the value of the local variable for the shift counter
 
-  LDR R4,R1,#0      ;Get the next character
- 
-  ;!!! This is where i should probaby check if the next character is a null terminator in order to cycle back to the beginning
+  Read_First_Char
+    ;Get the next character from the string
+    LDR R4,R1,#0      
+    BRp Shift_First_Char  ;Read the next character if it is not the null terminator
 
-  READ_FIRST_CHAR
-    ;Shift the character n times with division by 2
-    ADD R0,R4,#0
-    JSR PUSH        ;Push the character as the dividend onto the stack
+    ;If the character is the null terminator, reset the character pointer to the first character in the string
+    ;Then continue reading 
+    LEA R1,StrSeed         ;Reset the character pointer to the first character in the string
+    ST R1,charPointer      ;Update the character pointer static variable to point to the next character that should be used
 
-    AND R0,R0,#0
-    ADD R0,R0,#2
-    JSR PUSH        ;Push 2 as the divisor onto the stack
+    LDR R4,R1,#0           ;Copy the character into R4 to prepare for shifting and reading
 
-    JSR PUSH        ;Push space for the return value
+    Shift_First_Char
+      ;Shift the character n times with division by 2
+      ADD R0,R4,#0
+      JSR PUSH        ;Push the character as the dividend onto the stack
 
-    JSR Divide  
+      AND R0,R0,#0
+      ADD R0,R0,#2
+      JSR PUSH        ;Push 2 as the divisor onto the stack
 
-    JSR POP         ;Pop the result from the stack
-    ADD R4,R0,#0    ;Save that result in R4
+      JSR PUSH        ;Push space for the return value
 
-    AND R0,R0,R3    ;Get the least significant bit of the result
-    STR R0,R5,#-8   ;Save the least significant bit of the result on the stack
+      JSR Divide  
 
-    JSR POP
-    JSR POP         ;Pop the arguments
+      JSR POP         ;Pop the result from the stack
+      ADD R4,R0,#0    ;Save that result in R4
 
-    ADD R2,R2,#-1   ;Decrement the shift counter
-  BRp READ_FIRST_CHAR
+      AND R0,R0,R3    ;Get the least significant bit of the result
+      STR R0,R5,#-8   ;Save the least significant bit of the result on the stack
+
+      JSR POP
+      JSR POP         ;Pop the arguments
+
+      ;The shift counter copy in the register is also used as the loop counter since its original value is on the stack
+      ADD R2,R2,#-1   ;Decrement the shift counter
+    BRp Shift_First_Char
+
+  End_Read_First_Char
 
   ;Increment the shift counter, n, for the next character to be read
   LDR R2,R5,#-7
   ADD R2,R2,#1      ;Increment n
   
-  ;Cycle the shift counter by mod 8
+  ;Cycle the shift counter by mod 9
   ADD R0,R2,#0
   JSR PUSH          ;Push n as the argument (A) onto the stack
 
   AND R0,R0,#0
-  ADD R0,R0,#8
+  ADD R0,R0,#9
   JSR PUSH          ;Push 8 as the argument (B) onto the stack
 
   JSR PUSH          ;Push space for the return value
@@ -339,40 +337,64 @@ Do_Rand1
   JSR POP
   ADD R2,R0,#0      ;Store the return value in R2
 
+  BRp Dont_Reset_Counter2
+    ;If the result of the modulo is 0, then reset the counter to 1 (to read the 1st least significant bit)
+    ADD R2,R2,#1     
+
+  Dont_Reset_Counter2
   JSR POP
   JSR POP           ;Pop off the arguments
 
   STR R2,R5,#-7     ;Update the value of the local variable for the shift counter
 
-  LDR R4,R1,#0      ;Get the next character
- 
-  ;!!! This is where i should probaby check if the next character is a null terminator in order to cycle back to the beginning
+  Read_Second_Char
+    ;Get the next character from the string
+    ADD R1,R1,#1           ;Increment the pointer to get to the next character
+    ST R1,charPointer      ;Update the character pointer static variable to point to the next character that should be used
 
-  READ_SECOND_CHAR
-    ;Shift the character n times with division by 2
-    ADD R0,R4,#0
-    JSR PUSH        ;Push the character as the dividend onto the stack
+    LDR R4,R1,#0           ;Copy the character into R4 to prepare for shifting and reading
+    BRp Shift_Second_Char  ;Read the character if it is not the null terminator
 
-    AND R0,R0,#0
-    ADD R0,R0,#2
-    JSR PUSH        ;Push 2 as the divisor onto the stack
+    ;If the character is the null terminator, reset the character pointer to the first character in the string
+    ;Then continue reading 
+    LEA R1,StrSeed
+    LDR R4,R1,#0
 
-    JSR PUSH        ;Push space for the return value
+    ST R1,charPointer      ;Update the character pointer to point to the next character that should be used
 
-    JSR Divide  
+    Shift_Second_Char
+      ;Shift the character n times with division by 2
+      ADD R0,R4,#0
+      JSR PUSH        ;Push the character as the dividend onto the stack
 
-    JSR POP         ;Pop the result from the stack
-    ADD R4,R0,#0    ;Save that result in R4
+      AND R0,R0,#0
+      ADD R0,R0,#2
+      JSR PUSH        ;Push 2 as the divisor onto the stack
 
-    
-    AND R0,R0,R3    ;Get the least significant bit of the result
-    STR R0,R5,#-9   ;Save the least significant bit of the result on the stack
+      JSR PUSH        ;Push space for the return value
 
-    JSR POP
-    JSR POP         ;Pop the arguments
+      JSR Divide  
 
-    ADD R2,R2,#-1   ;Decrement the shift counter
-  BRp READ_SECOND_CHAR
+      JSR POP         ;Pop the result from the stack
+      ADD R4,R0,#0    ;Save that result in R4
+
+      
+      AND R0,R0,R3    ;Get the least significant bit of the result
+      STR R0,R5,#-9   ;Save the least significant bit of the result on the stack
+
+      JSR POP
+      JSR POP         ;Pop the arguments
+
+      ;The shift counter copy in the register is also used as the loop counter since its original value is on the stack
+      ADD R2,R2,#-1   ;Decrement the shift counter
+    BRp Shift_Second_Char
+
+  End_Read_Second_Char
+
+  ;Get the next character from the string
+  ADD R1,R1,#1          ;Increment the pointer to get to the next character
+  ST R1,charPointer     ;Update the character pointer to point to the next character that should be used
+
 
   ;Check if a random bit can be formed from the two read characters
   LDR R0,R5,#-8     ;Load the least significant bit of the first character
@@ -383,26 +405,26 @@ Do_Rand1
   NOT R4,R4
   ADD R4,R4,#1      ;R4 now holds the negative value of the second character's least significant bit
 
-  ADD R4,R0,R4      ;Perfrom the subtraction
+  ADD R4,R0,R4      ;Perform the subtraction
 
-  ;BRz         !!!!!!!!!      ;Read the next two characters if the two bits are the same
+  BRz Do_Rand1          ;Read the next two characters if the two bits are the same
 
-  BRp RETURN_ONE
+  BRp Return_One
     ;If the result is negative, then the two bits are 01 respectively, so return 0
     AND R0,R0,#0
 
     STR R0,R5,#0    ;Store zero in the return address of the caller
     BR End_Rand1
 
-  RETURN_ONE 
+  Return_One 
     ;If the result is positive, then the two bits are 10 respectively, so return 1
     AND R0,R0,#0
     ADD R0,R0,#1
 
     STR R0,R5,#0    ;Store one in the return address of the caller
+  BR End_Rand1
 End_Rand1
   ;Restore Saved context
-  JSR POP
   JSR POP
   JSR POP
   JSR Pop           ;Pop the local variables from the stack
@@ -426,9 +448,6 @@ End_Rand1
   ADD R7,R0,#0      ;restore R7
 RET;
   
-
-
-
 
 ;----------------------------------------------
 ;Subroutine Modulo - finds the remainder when dividing a non-negative number by a positive number

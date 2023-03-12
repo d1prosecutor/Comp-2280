@@ -576,7 +576,7 @@ Do_Multiply
     STR R3,R5,#-6   ;Update the local variable on the stack to hold the new product
 
     ADD R2,R2,#-1   ;Decrement the loop counter each time till it reaches zero
-    BRP WHILE_MULTIPLY     
+    BRP REPEATED_ADD 
 
   END_REPEATED_ADD
 

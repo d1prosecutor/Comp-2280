@@ -187,8 +187,11 @@ RET;
 ;Permute the 16-bit value passed in as a parameter, using WriteStep (another parameter passed in)
 ;as our permutation offset increment
 
+;Subroutine Permute
+;Permute the 16-bit value passed in as a parameter, using WriteStep (another parameter passed in)
+;as our permutation offset increment
+
 ;Stack Frame:
-;R5-6 - Saved R4
 ;R5-5 - Saved R3
 ;R5-4 - Saved R2
 ;R5-3 - Saved R1
@@ -284,12 +287,12 @@ Permute
         brnp permuteLoop    ;Keep looping while the read bit mask has not overflown to zero
 
     End_Do_Permute_Loop
-  
-  ;Store the result in the return address of the caller
-  STR R2,R5,#0
 
   End_Do_Permute
 End_Permute
+  ;Store the result in the return address of the caller
+  STR R2,R5,#0
+  
   ;Restore Saved context
   JSR Pop           
   ADD R4,R0,#0      ;restore R4
@@ -411,12 +414,12 @@ Inv_Permute
         brnp permuteLoop_Inv    ;Keep looping while the write bit mask has not overflown to zero
 
     End_Do_Inv_Permute_Loop
-  
-  ;Store the result in the return address of the caller
-  STR R2,R5,#0
 
   End_Do_Inv_Permute
 End_Inv_Permute
+  ;Store the result in the return address of the caller
+  STR R2,R5,#0
+  
   ;Restore Saved context
   JSR Pop           
   ADD R4,R0,#0      ;restore R4
@@ -436,7 +439,6 @@ End_Inv_Permute
   JSR Pop           
   ADD R7,R0,#0      ;restore R7
 RET;
-
 
 ;----------------------------------------------
 ;Subroutine Rand16 - generates a 16-bit positive random integer

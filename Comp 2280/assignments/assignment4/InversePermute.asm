@@ -98,12 +98,12 @@ Inv_Permute
         brnp permuteLoop_Inv    ;Keep looping while the write bit mask has not overflown to zero
 
     End_Do_Inv_Permute_Loop
-  
-  ;Store the result in the return address of the caller
-  STR R2,R5,#0
 
   End_Do_Inv_Permute
 End_Inv_Permute
+  ;Store the result in the return address of the caller
+  STR R2,R5,#0
+  
   ;Restore Saved context
   JSR Pop           
   ADD R4,R0,#0      ;restore R4

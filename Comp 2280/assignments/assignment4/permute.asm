@@ -20,7 +20,7 @@
 ;R4 - the mask for updating our permuted result, write bitmask
 ;R5 - frame pointer
 ;R7 - Return address to caller
-permute
+Permute
   ;First save context
   ADD R0,R7,#0
   JSR Push          ;save R7 another routine will be called

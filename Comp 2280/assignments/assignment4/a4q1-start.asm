@@ -114,7 +114,9 @@ Done
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
 MAIN
-
+JSR PUSH
+JSR Rand16
+JSR POP
 END_MAIN
       
 HALT
@@ -146,6 +148,7 @@ STACKBASE .fill   xFD00 ;start of stack
 
 ;Data Dictionary:
 ;R0 - contains data to be pushed.
+;R6 - stack pointer
 Push
   ADD R6,R6,#-1; make space on the stack for pushing the data
   STR R0,R6,#0; push the contents of R0 onto the stack
@@ -157,7 +160,8 @@ RET;
 ;pops the contents of Top of Stack into R0
 
 ;Data Dictionary:
-;R0 - will be used for underflow checking, will contain value of data popped at end of routine.
+;R0 - holds the stackbase for underflow checking, will contain value of data popped at end of routine.
+;R6 - stack pointer
 Pop 
   ;Check if the stack pointer is at the base of the stack to avoid underflow
   ;first store the negative value of the stack base in R0 for comparison
@@ -182,11 +186,109 @@ RET;
 ;to produce 15 random bits per number.
 
 ;Stack Frame:
-;R5+0 - return value 
+;R5-5 - Saved R3
+;R5-4 - Saved R2
+;R5-3 - Saved R1
+;R5-2 - Saved R5
+;R5-1 - Saved R7
+;R5+0 - return value
 
+;Data Dictionary:
+;R0 - used for push and pop routines, also holds the random bit generated using rand1
+;R1 - will hold the get_next_bit loop counter which counts the number of bits left to set
+;R2 - will hold the shift_bit loop counter which counts the number times left to shift the bit
+;R3 - will hold the resulting 16-bit integer formed
+;R5 - frame pointer
+;R7 - Return address to caller
 Rand16
+  ;First save context
+  ADD R0,R7,#0
+  JSR Push          ;save R7 since I will be using it
+
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
+  JSR Push
+
+  ADD R5,R6,#2      ;make R5 point to return value 
+
+  ADD R0,R1,#0
+  JSR Push          ;save R1 since I will be using it as a pointer to the string of characters
+
+  ADD R0,R2,#0
+  JSR Push          ;save R2 since I will be using it to store the shift counter
+
+  ADD R0,R3,#0
+  JSR Push          ;save R3 since I will be using it as a bit mask
+
+  Init_Rand16
+    AND R1,R1,#0
+    ADD R1,R1,#15     ;Initialize the get_next_bit loop counter
+
+    AND R3,R3,#0      ;Initialize the resulting 16-bit integer to zero
+
+  Get_Next_Bit
+    ;Genegrate a random bit using the rand1 subroutine
+    Get_Rand_Bit
+      JSR PUSH          ;Push space for the return value of rand1
+      JSR Rand1
+      JSR POP           ;Now the new random bit generated is stored in R0
+    End_Get_Rand_bit
+
+    Brz End_Set_bit   ;If the new random bit is a zero, don't bother shifting and setting
+
+    Shift_Bit
+      ADD R2,R1,#-15    ;Initialize the shift_bit loop counter to the number of times to shift the bit to the left
+                        ;(the loop counter goest from the negative to zero here)
+
+      BRz End_Shift_Bit ;Don't Shift the bit if it should be at the least significant position in the new 16-bit integer
+
+      ;Shift the bit to the current position in the new 16-bit integer
+      Do_Shift
+        ADD R0,R0,R0    ;Shift the bit one step to the left
+
+        ADD R2,R2,#1    ;This shift-loop counter starts at negative and counts up to zero, !!{Might change, ask prof if its okay}
+
+        BRn Do_Shift   ;Keep shifting till the bit is at the right position
+      End_Do_Shift
+
+    End_Shift_Bit
+
+    ;Now set the bit at the current position in the new 16-bit integer to the result of rand1 using bitwise OR
+    Set_Bit
+      ;Perform the bitwise OR operation on the bit stored in R0 and the resulting integer stored in R3
+      NOT R0, R0
+      NOT R3, R3
+
+      AND R3, R0, R3
+      NOT R3, R3        ;Perform and Store (R0' NAND R3')->(which gives R0 OR R3) in R3
+    End_Set_Bit
+
+    ADD R1,R1,#-1     
+    BRp Get_Next_Bit  ;Decrement loop counter and keep looping until all 15 (least significant) bits are set
+
+  End_Get_Next_Bit
+
+  ;Store the 16-bit integer formed in the return value address of the caller
+  STR R3,R5,#0
+End_Rand16
+  ;Restore Saved context
+  JSR Pop           
+  ADD R3,R0,#0      ;restore R3
+
+  JSR Pop           
+  ADD R2,R0,#0      ;restore R2
+
+  JSR Pop           
+  ADD R1,R0,#0      ;restore R1
+
+  JSR Pop           
+  ADD R5,R0,#0      ;restore R5
+
+  JSR Pop           
+  ADD R7,R0,#0      ;restore R7
+RET
 
 ;static variables for Rand1
+
 StrSeed .stringz "asdfghjkl;' `1234567890-= ~!@#$%^&*()_+ qwertyuiop[]\ QWERTYUIOP{}| zxcvbnm,./ ASDFGHJKL: ZXCVBNM<>?"
 
 charPointer .fill StrSeed
@@ -195,9 +297,15 @@ charPointer .fill StrSeed
 ;Subroutine Rand1 - generates a random bit according to the rules specified in the assignment
 
 ;Stack Frame:
-;R5-7 - Local variable for the shift counter
-;R5-8 - Local variable for the least significant bit of the first character
 ;R5-9 - Local variable for the least significant bit of the second character
+;R5-8 - Local variable for the least significant bit of the first character
+;R5-7 - Local variable for the shift counter
+;R5-6 - Saved R4
+;R5-5 - Saved R3
+;R5-4 - Saved R2
+;R5-3 - Saved R1
+;R5-2 - Saved R5
+;R5-1 - Saved R7
 ;R5+0 - return value (the random bit in bit position 0) 
 
 ;Data Dictionary:
@@ -205,7 +313,9 @@ charPointer .fill StrSeed
 ;R1 - holds the pointer to the string of characters being read
 ;R2 - shift counter, n, for the number of times to right shift a bit (reading the nth least significant bit from a character)
 ;R3 - will hold a bit mask which will be used to read the least significant bit each time
-;R4 - scratch register, 
+;R4 - scratch register, holds the current character being read
+;R5 - frame pointer
+;R7 - Return address to caller
 Rand1
   ;First save context
   ADD R0,R7,#0
@@ -228,7 +338,7 @@ Rand1
   ADD R0,R4,#0
   JSR Push          ;save R4 since I will be using it as a scratch register
 
-  JSR Push          ;push space for the shift counter variable, ; {might remove (initialize to zero)}
+  JSR Push          ;push space for the shift counter variable
 
   JSR Push          ;push space for storing the bit result of shifting the first character
 
@@ -458,9 +568,14 @@ RET;
 ;R0 - used for push and pop routines, holds the result of A mod B
 ;R1 - will hold 'A'
 ;R2 - will hold 'B'
-;R7 - return address to caller
+;R5 - frame pointer
+;R7 - Return address to caller
 
 ;Stack Frame:
+;R5-4 - Saved R2
+;R5-3 - Saved R1
+;R5-2 - Saved R5
+;R5-1 - Saved R7
 ;R5+0 - return value (will hold the value of A % B) 
 ;R5+1 - Parameter 2 (B)
 ;R5+2 - Parameter 1 (A)
@@ -551,11 +666,17 @@ RET;
 ;R2 - will hold the second factor
 ;R3 - will hold the local variable containing the Product
 ;R4 - scratch register
-;R7 - return address to caller
+;R5 - frame pointer
+;R7 - Return address to caller
 
 
 ;Stack Frame:
 ;R5-6 - Local variable for the product
+;R5-5 - Saved R3
+;R5-4 - Saved R2
+;R5-3 - Saved R1
+;R5-2 - Saved R5
+;R5-1 - Saved R7
 ;R5+0 - return value (will hold the value of paramter 1 * parameter 2)
 ;R5+1 - Parameter 1 (first factor)
 ;R5+2 - Parameter 2 (second factor)  
@@ -629,11 +750,18 @@ RET;
 ;R2 - will hold the divisor
 ;R3 - will hold the local variable containing the quotient
 ;R4 - scratch register
-;R7 - return address to caller
+;R5 - frame pointer
+;R7 - Return address to caller
 
 
 ;Stack Frame:
 ;R5-7 - Local variable for the quotient
+;R5-6 - Saved R4
+;R5-5 - Saved R3
+;R5-4 - Saved R2
+;R5-3 - Saved R1
+;R5-2 - Saved R5
+;R5-1 - Saved R7
 ;R5+0 - return value (will hold the value of paramter 1 / parameter 2)
 ;R5+1 - Parameter 2 (The divisor)
 ;R5+2 - Parameter 1 (The Dividend)  

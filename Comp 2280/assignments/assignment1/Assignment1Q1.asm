@@ -33,7 +33,7 @@ PUTS; Print the header banner
 	;Perform and Store (NOT R2) in R2
 	NOT R2, R2
 
-	;Perform and Store (R1 NAND R2) ->(which gives R1 OR R2) in R3
+	;Perform and Store (R1' NAND R2') ->(which gives R1 OR R2) in R3
 	AND R3, R1, R2
 	NOT R3, R3
 

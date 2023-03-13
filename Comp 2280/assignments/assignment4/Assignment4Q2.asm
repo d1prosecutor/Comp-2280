@@ -114,16 +114,6 @@ Done
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
 MAIN
-AND R0,R0,0
-ADD R0,R0,#1
-JSR PUSH
-
-ADD R0,R0,#14
-JSR PUSH
-
-JSR PUSH
-JSR Permute
-Jsr Pop
 END_MAIN
       
 HALT

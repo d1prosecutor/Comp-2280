@@ -527,10 +527,10 @@ Rand16
         BRp Get_Next_Bit  ;Decrement loop counter and keep looping until all 15 (least significant) bits are set
 
     End_Get_Next_Bit
-
+End_Rand16
     ;Store the 16-bit integer formed in the return value address of the caller
     STR R3,R5,#0
-End_Rand16
+
     ;Restore Saved context
     JSR Pop           
     ADD R3,R0,#0      ;restore R3
@@ -904,11 +904,11 @@ Do_Modulo
   ADD R2,R2,#1      ;R2 has now been flipped to its negative value (-(A/B) * B)
 
   ADD R0,R1,R2      ;R0 holds the output (A mod B)
-
-  STR R0,R5,#0      ;Store the result of A mod B in the return value address of the caller
-
 End_Do_Modulo
 End_Modulo
+  ;Store the result of A mod B in the return value address of the caller
+  STR R0,R5,#0      
+
   ;Restore Saved context
   JSR Pop           
   ADD R2,R0,#0      ;restore R2

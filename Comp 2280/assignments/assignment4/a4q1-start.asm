@@ -114,9 +114,16 @@ Done
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
 MAIN
-JSR PUSH
-JSR Rand16
-JSR POP
+
+  PRINT_RANDOM_NUMS
+    JSR PUSH
+    JSR Rand16
+    JSR PRINT
+    JSR POP
+
+    ADD R3,R3,#-1
+  BRp PRINT_RANDOM_NUMS
+
 END_MAIN
       
 HALT

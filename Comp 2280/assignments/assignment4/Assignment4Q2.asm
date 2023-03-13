@@ -115,18 +115,15 @@ Done
 ;Main part of code for generating random numbers
 MAIN
 AND R0,R0,0
-ADD R0,R0,15
-
+ADD R0,R0,#1
 JSR PUSH
 
-ADD R0,R0,#-14
+ADD R0,R0,#14
 JSR PUSH
+
 JSR PUSH
 JSR Permute
 Jsr Pop
-
-
-
 END_MAIN
       
 HALT
@@ -238,7 +235,7 @@ Permute
   Init_Permute
     ;setup and initialization
     ;
-    add  R1,R5,#1     ;Load the parameter containing the data to permute
+    ldr  R1,R5,#1     ;Load the parameter containing the data to permute
     
     and  R2,R2,#0     ;Initialize the resulting 16-bit integer to 0
   
@@ -248,7 +245,7 @@ Permute
     and  R4,R4,#0     ;the current write bitmask, initialized based on WriteStep
     add  R4,R4,#1
 
-    add  R0,R5,#2     ;Initialize the writestep (number of times to shift)
+    ldr  R0,R5,#2     ;Initialize the writestep (number of times to shift)
     add  R0,R0,#-1    ;number of times to shift -1
 
     initLoop
@@ -274,7 +271,7 @@ Permute
 
       bitzero        
         ;move write bitmask by WriteStep shifts, checking for overflow to reset
-        add  R0,R5,#2
+        ldr  R0,R5,#2
         add  R0,R0,#-1  ; number of times to shift -1
 
       shiftLoop
@@ -315,6 +312,7 @@ End_Permute
   JSR Pop           
   ADD R7,R0,#0      ;restore R7
 RET;
+
 
 
 ;----------------------------------------------

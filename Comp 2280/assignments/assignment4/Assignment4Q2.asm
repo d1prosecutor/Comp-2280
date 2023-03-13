@@ -210,7 +210,7 @@ RET;
 Rand16
   ;First save context
   ADD R0,R7,#0
-  JSR Push          ;save R7 since I will be using it
+  JSR Push          ;save R7 since another routine is called
 
   ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
   JSR Push
@@ -326,7 +326,7 @@ charPointer .fill StrSeed
 Rand1
   ;First save context
   ADD R0,R7,#0
-  JSR Push          ;save R7 since I will be using it
+  JSR Push          ;save R7 since another routine is called
 
   ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
   JSR Push
@@ -590,7 +590,7 @@ RET;
 Modulo
   ;First save context
   ADD R0,R7,#0
-  JSR Push          ;save R7 since I will be using it
+  JSR Push          ;save R7 since another routine is called
 
   ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
   JSR Push
@@ -690,7 +690,7 @@ RET;
 Multiply
   ;First save context
   ADD R0,R7,#0
-  JSR Push          ;save R7 since I will be using it
+  JSR Push          ;save R7 since another routine is called
 
   ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
   JSR Push
@@ -775,7 +775,7 @@ RET;
 Divide
   ;First save context
   ADD R0,R7,#0
-  JSR Push          ;save R7 since I will be using it
+  JSR Push          ;save R7 since another routine is called
 
   ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
   JSR Push

@@ -16,6 +16,23 @@
 
   .orig x3000
   
+permute
+  ;First save context
+  ADD R0,R7,#0
+  JSR Push          ;save R7 since I will be using it
+
+  ADD R0,R5,#0      ;save R5, important since this routine may be called from another routine.
+  JSR Push
+
+  ADD R5,R6,#2      ;make R5 point to return value 
+
+  ADD R0,R1,#0
+  JSR Push          ;save R1 since I will be using it
+
+  ADD R0,R2,#0
+  JSR Push          ;save R2 since I will be using it
+
+  Init_Permute
 ;setup and initialization
 ;
   ld   R1,Data

@@ -3,6 +3,9 @@
 ;It will encrypt the string in-place, replacing each character with the encrypted value of the character
 
 ;Stack Frame:
+;R5-8 - Local variable which will hold the result of the permutation each time (the encypted character)
+;R5-7 - Local variable which will hold the value to permute each time
+;R5-6 - Saved R4
 ;R5-5 - Saved R3
 ;R5-4 - Saved R2
 ;R5-3 - Saved R1
@@ -15,9 +18,9 @@
 ;Data Dictionary:
 ;R0 - Used for push and pop routines, scratch register
 ;R1 - will hold the pointer to the string
-;R2 - will hold the first character in the string in R1, scratch register
+;R2 - will hold the next character in the string in R1
 ;R3 - will hold the 16-bit random value
-;R4 - will hold the 16-bit key 
+;R4 - will hold the 16-bit key value
 ;R5 - frame pointer
 ;R7 - Return address to caller
 Encrypt
@@ -42,20 +45,63 @@ Encrypt
     ADD R0,R4,#0
     JSR Push          ;save R4 since I will be using it
 
+    JSR Push          ;Push space for the local variable which will hold the value to permute each time
+
+    JSR Push          ;Push space for the local variable which will hold the result of permute each time
+
     Init_Encrypt 
         LDR R1,R5,#0    ;Initialize R1 to hold the pointer to the string
         
         ;;;Initialize the first character in the string here in R2
-
-        LDR R3,R5,#1    ;Initialize R1 to hold the 16-bit random value
-        LDR R4,R5,#2    ;Initialize R1 to hold the 16-bit key
     End_Init_Encrypt
 
-    Do_Encrypt        
+    Do_Encrypt  
+        Do_Encrypt_Xor
+            ;Perform XOR on the next character in the string and the random 16-bit number
+            ADD R0,R2,#0    
+            JSR Push        ;Push the next character as an argument onto the stack
+
+            LDR R0,R5,#1 
+            JSR Push        ;Push the 16-bit number as an argument onto the stack
+
+            JSR Push        ;Push space for the return value
+
+            JSR Xor
+
+            JSR Pop
+            STR R0,R5,#-7   ;Save the return value of Xor on the stack
+
+            JSR Pop
+            JSR Pop         ;Pop off all the arguments
+        End_Encrypt_Xor
+
+        Do_Encrypt_Permute
+            LDR R0,R5,#2 
+            JSR Push        ;Push the key as 'writestep' argument onto the stack
+
+            LDR R0,R5,#-7   
+            JSR Push        ;Push the result of the Xor operation as the word (argument) to permute
+
+            JSR Push        ;Push space for the return value
+
+            JSR Permute     
+
+            JSR Pop
+            STR R0,R5,#-8   ;Save the return value of permute on the stack
+
+            JSR Pop
+            JSR Pop         ;Pop off all the arguments
+        End_Encrypt_Permute
+
+        ;Check if all the characters have been encrypted, ie, keep encypting till the null terminator is reached
+
 
     End_Do_Encrypt
 End_Encrypt
 ;Restore Saved context
+  JSR Pop  
+  JSR Pop           ;Pop the local variable
+
   JSR Pop           
   ADD R4,R0,#0      ;restore R4
 

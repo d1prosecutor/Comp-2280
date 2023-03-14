@@ -3,6 +3,7 @@
 ;as our permutation offset increment
 
 ;Stack Frame:
+;R5-6 - Saved R4
 ;R5-5 - Saved R3
 ;R5-4 - Saved R2
 ;R5-3 - Saved R1

@@ -27,9 +27,14 @@ MAIN
 
   LEA R0,Test
   Jsr Push
+  PUTS
 
   Jsr Encrypt
 
+  LEA R0,Test
+  PUTS
+
+  JSR Pop
   JSR Pop
   JSR Pop
 
@@ -45,9 +50,13 @@ MAIN
 
   LEA R0,Test
   Jsr Push
+  PUTS
 
   Jsr Decrypt
 
+  LEA R0,Test
+  PUTS
+  
   Jsr Pop
   JSR Pop
   JSR Pop

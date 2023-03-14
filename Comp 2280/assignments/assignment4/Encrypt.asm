@@ -3,9 +3,6 @@
 ;It will encrypt the string in-place, replacing each character with the encrypted value of the character
 
 ;Stack Frame:
-;R5-8 - Local variable which will hold the result of the permutation each time (the encypted character)
-;R5-7 - Local variable which will hold the prev encrypted character, and  also the value to permute each time
-;R5-6 - Saved R4
 ;R5-5 - Saved R3
 ;R5-4 - Saved R2
 ;R5-3 - Saved R1
@@ -18,9 +15,8 @@
 ;Data Dictionary:
 ;R0 - Used for push and pop routines, scratch register
 ;R1 - will hold the pointer to the string
-;R2 - will hold the next character in the string in R1
-;R3 - 
-;R4 - 
+;R2 - will hold the prev encrypted character, current encrypted character, and the value to permute each time
+;R3 - will hold the result of the permutation each time (the encypted character)
 ;R5 - frame pointer
 ;R7 - Return address to caller
 Encrypt
@@ -42,33 +38,23 @@ Encrypt
     ADD R0,R3,#0
     JSR Push          ;save R3 since I will be using it
 
-    ADD R0,R4,#0
-    JSR Push          ;save R4 since I will be using it
-
-    ;Push space for the local variable which will hold the prev encrypted char, and the value to permute each time
-    JSR Push 
-
-    JSR Push          ;Push space for the local variable which will hold the result of permute each time
-
     Init_Encrypt 
-        LDR R1,R5,#0    ;Initialize R1 to hold the pointer to the string
+        LDR R1,R5,#0        ;Initialize R1 to hold the pointer to the string
+        LDR R0,R1,#0        ;Check if the next character in the string is the null terminator
+        BRz End_Do_Encrypt  ;Don't Encrypt an empty string 
 
-        LDR R0,R5,#1
-        STR R0,R5,#-7   ;Initialize the value to permute as the 16-bit random number for the first iteration
-        
-        ;;;Initialize the first character in the string here in R2
+        LDR R2,R5,#1    ;Initialize the value to permute as the 16-bit random number for the first iteration
     End_Init_Encrypt
 
     Do_Encrypt  
-       ;Perform XOR on the next character in the string and the previous encrypted character
+        ;Perform XOR on the next character in the string and the previous encrypted character
+        ;!!! Note - At the first iteration, the random number serves as the previous encrypted character
         Do_Encrypt_Xor
-            ;!!! Note - At the first iteration, the random number serves as the previous encrypted character
-            ;
-            ADD R0,R2,#0  ;;;????????????????????????????check the string pointer thingy   
+            LDR R0,R1,#0    
             JSR Push        ;Push the next character as an argument onto the stack
 
-            ;R5-7 at this point holds the previous encrypted character
-            LDR R0,R5,#-7
+            ;R2 at this point holds the previous encrypted character
+            ADD,R0,R2,#0
             JSR Push        ;Push the previous encrypted character as an argument onto the stack
 
             JSR Push        ;Push space for the return value
@@ -76,8 +62,8 @@ Encrypt
             JSR Xor
 
             JSR Pop
-            STR R0,R5,#-7   ;Save the return value of Xor on the stack
-            ;R5-7 at this point holds the value to permute
+            ADD R2,R0,#0   ;Save the return value of Xor in R2
+            ;R2 at this point holds the value to permute
 
             JSR Pop
             JSR Pop         ;Pop off all the arguments
@@ -88,7 +74,7 @@ Encrypt
             LDR R0,R5,#2 
             JSR Push        ;Push the key as 'writestep' argument onto the stack
 
-            LDR R0,R5,#-7   
+            ADD,R0,R2,#0
             JSR Push        ;Push the result of the Xor operation as the word (argument) to permute
 
             JSR Push        ;Push space for the return value
@@ -96,32 +82,34 @@ Encrypt
             JSR Permute     
 
             JSR Pop
-            STR R0,R5,#-8   ;Save the return value of permute on the stack
+            ADD R2,R0,#0   ;Save the return value of permute, the encrypted character, in R2
 
             JSR Pop
             JSR Pop         ;Pop off all the arguments
         End_Encrypt_Permute
 
         ;Replace the character being pointed to with the result of permute which is the encrypted character
+        STR R2,R1,#0        ;overwrite the character at the current location with the encrypted character
+
+        ; ;Now store the encrypted character in R2 for the next XOR operation 
+        ; ADD R2,R3,#0
 
         ;Check if all the characters have been encrypted, ie, keep encypting till the null terminator is reached
-        ;Increment the string pointer to point to the next character in the string
+        ADD R1,R1,#1        ;Increment the string pointer to point to the next character in the string
+        LDR R0,R1,#0        ;Check if the next character in the string is the null terminator
+
+        BRp Do_Encrypt      ;Keep encrypting till the null terminator is reached
 
     End_Do_Encrypt
 End_Encrypt
 ;Restore Saved context
-  JSR Pop  
-  JSR Pop           ;Pop the local variable
-
-  JSR Pop           
-  ADD R4,R0,#0      ;restore R4
 
   JSR Pop           
   ADD R3,R0,#0      ;restore R3
-
+  
   JSR Pop           
   ADD R2,R0,#0      ;restore R2
-
+  
   JSR Pop           
   ADD R1,R0,#0      ;restore R1
 

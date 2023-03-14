@@ -163,6 +163,49 @@ End_Xor
     ADD R7,R0,#0      ;restore R7
 RET;
 
+;------------------------------------------------------
+;Subroutine Push
+;pushes the contents of R0 onto the stack
+
+;Data Dictionary:
+;R0 - contains data to be pushed.
+;R6 - stack pointer
+Push
+    ADD R6,R6,#-1; make space on the stack for pushing the data
+    STR R0,R6,#0; push the contents of R0 onto the stack
+End_Push
+RET;
+
+;------------------------------------------------------
+;Subroutine Pop
+;pops the contents of Top of Stack into R0
+
+;Data Dictionary:
+;R0 - holds the stackbase for underflow checking, will contain value of data popped at end of routine.
+;R6 - stack pointer
+Pop 
+    ;Check if the stack pointer is at the base of the stack to avoid underflow
+    ;first store the negative value of the stack base in R0 for comparison
+    LD  R0,STACKBASE
+    NOT R0,R0
+    ADD R0,R0,#1    ;R0 holds (-stackBase) now
+
+    ;Now compare the current position of the stack pointer with the stack base
+    ADD R0,R0,R6
+    BRzp Stack_Underflow    ;Don't pop the stack if the stack pointer is at (or below) the base of the stack 
+
+    Do_Pop
+    LDR R0,R6,#0  ;store the contents of the top of the stack into R0 before popping
+    ADD R6,R6,#1
+    Br End_Pop
+
+    ;Print the underflow message if underflow occurs
+    Stack_Underflow
+    LEA R0,StrUnderflow
+    PUTS
+End_Pop
+RET;
+
 ;Subroutine Encrypt
 ;This routine takes as parameters a pointer to a string, a 16-bit random number, and a 16-bit key value. 
 ;It will encrypt the string in-place, replacing each character with the encrypted value of the character
@@ -409,51 +452,6 @@ End_Decrypt
   JSR Pop           
   ADD R7,R0,#0      ;restore R7
 RET;
-
-
-;------------------------------------------------------
-;Subroutine Push
-;pushes the contents of R0 onto the stack
-
-;Data Dictionary:
-;R0 - contains data to be pushed.
-;R6 - stack pointer
-Push
-    ADD R6,R6,#-1; make space on the stack for pushing the data
-    STR R0,R6,#0; push the contents of R0 onto the stack
-End_Push
-RET;
-
-;------------------------------------------------------
-;Subroutine Pop
-;pops the contents of Top of Stack into R0
-
-;Data Dictionary:
-;R0 - holds the stackbase for underflow checking, will contain value of data popped at end of routine.
-;R6 - stack pointer
-Pop 
-    ;Check if the stack pointer is at the base of the stack to avoid underflow
-    ;first store the negative value of the stack base in R0 for comparison
-    LD  R0,STACKBASE
-    NOT R0,R0
-    ADD R0,R0,#1    ;R0 holds (-stackBase) now
-
-    ;Now compare the current position of the stack pointer with the stack base
-    ADD R0,R0,R6
-    BRzp Stack_Underflow    ;Don't pop the stack if the stack pointer is at (or below) the base of the stack 
-
-    Do_Pop
-    LDR R0,R6,#0  ;store the contents of the top of the stack into R0 before popping
-    ADD R6,R6,#1
-    Br End_Pop
-
-    ;Print the underflow message if underflow occurs
-    Stack_Underflow
-    LEA R0,StrUnderflow
-    PUTS
-End_Pop
-RET;
-
 
 ;Subroutine Permute
 ;Permute the 16-bit value passed in as a parameter, using WriteStep (another parameter passed in)

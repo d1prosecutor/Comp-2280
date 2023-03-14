@@ -1,10 +1,10 @@
-;Subroutine Encrypt
+;Subroutine Decrypt
 ;This routine takes as parameters a pointer to a string, a 16-bit random number, and a 16-bit key value. 
-;It will encrypt the string in-place, replacing each character with the encrypted value of the character
+;It will decrypt the string in-place, replacing each character with the decrypted value of the character.
 
 ;Stack Frame:
-;R5-8 - Local variable which will hold the result of the permutation each time (the encypted character)
-;R5-7 - Local variable which will hold the value to permute each time
+;R5-8 - Local variable which will hold the value to Inverse permute each time
+;R5-7 - Local variable which will hold the result of the Inverse permutation each time.
 ;R5-6 - Saved R4
 ;R5-5 - Saved R3
 ;R5-4 - Saved R2
@@ -23,7 +23,7 @@
 ;R4 - will hold the 16-bit key value
 ;R5 - frame pointer
 ;R7 - Return address to caller
-Encrypt
+Decrypt
     ;First save context
     ADD R0,R7,#0
     JSR Push          ;save R7 another routine will be called
@@ -45,20 +45,39 @@ Encrypt
     ADD R0,R4,#0
     JSR Push          ;save R4 since I will be using it
 
-    JSR Push          ;Push space for the local variable which will hold the value to permute each time
+    JSR Push          ;Push space for the local variable which will hold the value to Inv_permute each time
 
-    JSR Push          ;Push space for the local variable which will hold the result of permute each time
+    JSR Push          ;Push space for the local variable which will hold the result of Inv_permute each time
 
-    Init_Encrypt 
+    Init_Decrypt 
         LDR R1,R5,#0    ;Initialize R1 to hold the pointer to the string
         
         ;;;Initialize the first character in the string here in R2
-    End_Init_Encrypt
+    End_Init_Decrypt
 
-    Do_Encrypt  
-       ;Perform XOR on the next character in the string and the previous encrypted character
-        Do_Encrypt_Xor
-            ;At the first iteration, the random number serves as the previous encrypted character
+    Do_Decrypt 
+        ;Perform Inv_Permute on the next character in the string
+        Do_Decrypt_Inv_Permute
+            LDR R0,R5,#2 
+            JSR Push        ;Push the key as 'writestep' argument onto the stack
+
+            LDR R0,R5,#-7   
+            JSR Push        ;Push the next character of the string
+
+            JSR Push        ;Push space for the return value
+
+            JSR Inv_Permute     
+
+            JSR Pop
+            STR R0,R5,#-8   ;Save the return value of Inverse_permute on the stack
+
+            JSR Pop
+            JSR Pop         ;Pop off all the arguments
+        End_Decrypt_Inv_Permute
+
+       ;Perform XOR on the result of Inv_Permute and the ??previous decrypted character??or just previous character?? 
+        Do_Decrypt_Xor
+            ;At the first iteration, the random number serves as the previous decrypted character
             ADD R0,R2,#0    
             JSR Push        ;Push the next character as an argument onto the stack
 
@@ -74,34 +93,15 @@ Encrypt
 
             JSR Pop
             JSR Pop         ;Pop off all the arguments
-        End_Encrypt_Xor
-
-        ;Perform permute on the result of Xor
-        Do_Encrypt_Permute
-            LDR R0,R5,#2 
-            JSR Push        ;Push the key as 'writestep' argument onto the stack
-
-            LDR R0,R5,#-7   
-            JSR Push        ;Push the result of the Xor operation as the word (argument) to permute
-
-            JSR Push        ;Push space for the return value
-
-            JSR Permute     
-
-            JSR Pop
-            STR R0,R5,#-8   ;Save the return value of permute on the stack
-
-            JSR Pop
-            JSR Pop         ;Pop off all the arguments
-        End_Encrypt_Permute
+        End_Decrypt_Xor
 
         ;Replace the character being pointed to with the result of permute which is the encrypted character
 
         ;Check if all the characters have been encrypted, ie, keep encypting till the null terminator is reached
         ;Increment the string pointer to point to the next character in the string
 
-    End_Do_Encrypt
-End_Encrypt
+    End_Do_Decrypt
+End_Decrypt
 ;Restore Saved context
   JSR Pop  
   JSR Pop           ;Pop the local variable

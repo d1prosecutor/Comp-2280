@@ -3,7 +3,7 @@
 ;It will decrypt the string in-place, replacing each character with the decrypted value of the character.
 
 ;Stack Frame:
-;R5-8 - Local variable which will hold the value to Inverse permute each time
+;R5-8 - Local variable which will hold the value to use for Xor each time
 ;R5-7 - Local variable which will hold the result of the Inverse permutation each time.
 ;R5-6 - Saved R4
 ;R5-5 - Saved R3
@@ -19,8 +19,8 @@
 ;R0 - Used for push and pop routines, scratch register
 ;R1 - will hold the pointer to the string
 ;R2 - will hold the next character in the string in R1
-;R3 - will hold the 16-bit random value
-;R4 - will hold the 16-bit key value
+;R3 - 
+;R4 - 
 ;R5 - frame pointer
 ;R7 - Return address to caller
 Decrypt
@@ -45,12 +45,17 @@ Decrypt
     ADD R0,R4,#0
     JSR Push          ;save R4 since I will be using it
 
-    JSR Push          ;Push space for the local variable which will hold the value to Inv_permute each time
-
     JSR Push          ;Push space for the local variable which will hold the result of Inv_permute each time
+
+    ;Push space for the local variable which will hold the previous decrypted char, and the new decrypted char
+    JSR Push        
 
     Init_Decrypt 
         LDR R1,R5,#0    ;Initialize R1 to hold the pointer to the string
+
+        ;Initialize the value to Xor with the result of Inv_Perumte as the 16-bit random number for the first iteration
+        LDR R0,R5,#1
+        STR R0,R5,#-8   
         
         ;;;Initialize the first character in the string here in R2
     End_Init_Decrypt
@@ -61,15 +66,15 @@ Decrypt
             LDR R0,R5,#2 
             JSR Push        ;Push the key as 'writestep' argument onto the stack
 
-            LDR R0,R5,#-7   
-            JSR Push        ;Push the next character of the string
+            ADD R0,R2,#0  ;;;????????????????????????????check the string pointer thingy   
+            JSR Push        ;Push the next character as an argument onto the stack
 
             JSR Push        ;Push space for the return value
 
             JSR Inv_Permute     
 
             JSR Pop
-            STR R0,R5,#-8   ;Save the return value of Inverse_permute on the stack
+            STR R0,R5,#-7   ;Save the return value of Inverse_permute on the stack
 
             JSR Pop
             JSR Pop         ;Pop off all the arguments
@@ -77,19 +82,22 @@ Decrypt
 
        ;Perform XOR on the result of Inv_Permute and the ??previous decrypted character??or just previous character?? 
         Do_Decrypt_Xor
-            ;At the first iteration, the random number serves as the previous decrypted character
-            ADD R0,R2,#0    
-            JSR Push        ;Push the next character as an argument onto the stack
+            ;!!! Note - At the first iteration, the random number serves as the previous decrypted??????? character
+            ;
+            LDR R0,R5,#-7
+            JSR Push        ;Push the result of Inv_Permute as an argument onto the stack
 
-            LDR R0,R5,#1 
-            JSR Push        ;Push the 16-bit number as an argument onto the stack
+            ;R5-8 at this point holds the prev decrypted character?????????????????
+            LDR R0,R5,#-8
+            JSR Push        ;Push the previous decrypted character as an argument onto the stack
 
             JSR Push        ;Push space for the return value
 
             JSR Xor
 
             JSR Pop
-            STR R0,R5,#-7   ;Save the return value of Xor on the stack
+            STR R0,R5,#-8   ;Save the return value of Xor on the stack
+            ;R5-8 at this point holds the new decrypted character?????????????????
 
             JSR Pop
             JSR Pop         ;Pop off all the arguments

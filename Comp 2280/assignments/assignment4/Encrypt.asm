@@ -4,7 +4,7 @@
 
 ;Stack Frame:
 ;R5-8 - Local variable which will hold the result of the permutation each time (the encypted character)
-;R5-7 - Local variable which will hold the value to permute each time
+;R5-7 - Local variable which will hold the prev encrypted character, and  also the value to permute each time
 ;R5-6 - Saved R4
 ;R5-5 - Saved R3
 ;R5-4 - Saved R2
@@ -19,8 +19,8 @@
 ;R0 - Used for push and pop routines, scratch register
 ;R1 - will hold the pointer to the string
 ;R2 - will hold the next character in the string in R1
-;R3 - will hold the 16-bit random value
-;R4 - will hold the 16-bit key value
+;R3 - 
+;R4 - 
 ;R5 - frame pointer
 ;R7 - Return address to caller
 Encrypt
@@ -45,12 +45,16 @@ Encrypt
     ADD R0,R4,#0
     JSR Push          ;save R4 since I will be using it
 
-    JSR Push          ;Push space for the local variable which will hold the value to permute each time
+    ;Push space for the local variable which will hold the prev encrypted char, and the value to permute each time
+    JSR Push 
 
     JSR Push          ;Push space for the local variable which will hold the result of permute each time
 
     Init_Encrypt 
         LDR R1,R5,#0    ;Initialize R1 to hold the pointer to the string
+
+        LDR R0,R5,#1
+        STR R0,R5,#-7   ;Initialize the value to permute as the 16-bit random number for the first iteration
         
         ;;;Initialize the first character in the string here in R2
     End_Init_Encrypt
@@ -58,12 +62,14 @@ Encrypt
     Do_Encrypt  
        ;Perform XOR on the next character in the string and the previous encrypted character
         Do_Encrypt_Xor
-            ;At the first iteration, the random number serves as the previous encrypted character
-            ADD R0,R2,#0    
+            ;!!! Note - At the first iteration, the random number serves as the previous encrypted character
+            ;
+            ADD R0,R2,#0  ;;;????????????????????????????check the string pointer thingy   
             JSR Push        ;Push the next character as an argument onto the stack
 
-            LDR R0,R5,#1 
-            JSR Push        ;Push the 16-bit number as an argument onto the stack
+            ;R5-7 at this point holds the previous encrypted character
+            LDR R0,R5,#-7
+            JSR Push        ;Push the previous encrypted character as an argument onto the stack
 
             JSR Push        ;Push space for the return value
 
@@ -71,6 +77,7 @@ Encrypt
 
             JSR Pop
             STR R0,R5,#-7   ;Save the return value of Xor on the stack
+            ;R5-7 at this point holds the value to permute
 
             JSR Pop
             JSR Pop         ;Pop off all the arguments

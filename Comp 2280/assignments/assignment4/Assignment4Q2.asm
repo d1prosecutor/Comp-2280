@@ -180,7 +180,7 @@ chLittleA .fill   #-97  ;negative of the ASCII code for the 'a' character
     
 STACKBASE .fill   xFD00 ;start of stack
 
-Test  .stringz "Naza"
+Test  .stringz "All the world's a stage, And all the men and women merely players."
 
 ;Subroutine Xor
 ;This routine takes as parameters two 16-bit values, performs exclusive-Or on them and returns the result  

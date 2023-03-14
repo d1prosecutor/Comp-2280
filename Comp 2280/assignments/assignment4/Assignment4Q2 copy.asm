@@ -62,6 +62,8 @@ StrUnderflow  .stringz  "\nStack Underflow, SP will not be changed."
     
 STACKBASE .fill   xFD00 ;start of stack
 
+Test  .stringz "All the world's a stage, And all the men and women merely players."
+
 ;Subroutine Xor
 ;This routine takes as parameters two 16-bit values, performs exclusive-Or on them and returns the result  
 

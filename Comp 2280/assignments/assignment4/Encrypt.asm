@@ -98,7 +98,7 @@ Encrypt
         ADD R1,R1,#1        ;Increment the string pointer to point to the next character in the string
         LDR R0,R1,#0        ;Check if the next character in the string is the null terminator
 
-        BRp Do_Encrypt      ;Keep encrypting till the null terminator is reached
+        BRnp Do_Encrypt      ;Keep encrypting till the null terminator is reached
 
     End_Do_Encrypt
 End_Encrypt

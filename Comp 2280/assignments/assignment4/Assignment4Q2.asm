@@ -114,24 +114,48 @@ Done
 ;------------------------------------------------------------------------
 ;Main part of code for generating random numbers
 MAIN
-;Key value
-AND R0,R0,#0
-ADD R0,R0,#13
-JSR PUSH
+;Encrypt
+  ;Key value
+  AND R0,R0,#0
+  ADD R0,R0,#13
+  JSR PUSH
 
-;Random 16-bit
-JSR Push 
-JSR Rand16
+  ;Random 16-bit
+  JSR Push 
+  JSR Rand16
+  Jsr Pop
+  ADD R1,R0,#0 ;Save the random number
 
+  JSR PUSH  ;Push back the random number
 
-LEA R0,Test
-Jsr Push
+  LEA R0,Test
+  Jsr Push
 
-Jsr Encrypt
+  Jsr Encrypt
 
-Jsr Pop
-JSR Pop
-JSR Pop
+  JSR Pop
+  JSR Pop
+  JSR Pop
+
+;Decrypt
+  ;Key value
+  AND R0,R0,#0
+  ADD R0,R0,#13
+  JSR PUSH
+
+  ;Random 16-bit
+  ADD R0,R1,#0
+  JSR Push 
+
+  LEA R0,Test
+  Jsr Push
+
+  Jsr Decrypt
+
+  Jsr Pop
+  JSR Pop
+  JSR Pop
+
 END_MAIN
       
 HALT
@@ -454,7 +478,7 @@ Decrypt
             JSR Xor
 
             JSR Pop
-            STR R3,R0,#0   ;Save the return value of Xor on the stack
+            ADD R3,R0,#0   ;Save the return value of Xor on the stack
             ;R3 at this point holds the new decrypted character
 
             JSR Pop
@@ -474,7 +498,7 @@ Decrypt
         ADD R1,R1,#1        ;Increment the string pointer to point to the next character in the string
         LDR R0,R1,#0        ;Check if the next character in the string is the null terminator
 
-        BRp Do_Decrypt      ;Keep encrypting till the null terminator is reached
+        BRnp Do_Decrypt      ;Keep encrypting till the null terminator is reached
 
     End_Do_Decrypt
 End_Decrypt
@@ -720,7 +744,7 @@ Inv_Permute
   Init_Inv_Permute
     ;setup and initialization
     ;
-    ldr  R1,R5,#1     ;Load the parameter containing the data to permute
+    ldr  R1,R5,#1     ;Load the parameter containing the integer to Inverse permute
     
     and  R2,R2,#0     ;Initialize the resulting 16-bit integer to 0
   
